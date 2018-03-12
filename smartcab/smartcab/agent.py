@@ -25,9 +25,6 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set any additional class parameters as needed
-        self.last_state = None
-        self.last_action = None
-        self.last_reward = None
         self.n_train = 0
 
     def reset(self, destination=None, testing=False):
@@ -49,10 +46,11 @@ class LearningAgent(Agent):
         # set epsilon and alpha
 
         # default version
-        # self.epsilon -= 0.05
+        self.epsilon -= 0.05
 
         # improve version
-        self.epsilon = 1.0/self.n_train
+        # self.epsilon = 1.0/self.n_train
+        # self.epsilon = math.cos(float(self.n_train)/1000)
 
         if testing:
             self.alpha = 0.0
@@ -74,7 +72,7 @@ class LearningAgent(Agent):
         ###########
         # Set 'state' as a tuple of relevant data for the agent        
         # state = None
-        state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'])
+        state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'], inputs['right'])
         return state
 
     def get_maxQ(self, state):
@@ -129,10 +127,7 @@ class LearningAgent(Agent):
             else:
                 if state in self.Q:
                     max_q = self.get_maxQ(state=state)
-                    max_actions = []
-                    for act, score in self.Q[state].items():
-                        if score == max_q:
-                            max_actions.append(act)
+                    max_actions = [k for k, v in self.Q[state].items() if v == max_q]
                     action = random.choice(max_actions)
                 else:
                     self.createQ(state=state)
@@ -185,7 +180,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent, epsilon=1.0, alpha=0.1, learning=False)
+    agent = env.create_agent(LearningAgent, epsilon=1.0, alpha=0.1, learning=True)
     
     ##############
     # Follow the driving agent
@@ -200,7 +195,7 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env, update_delay=0.00001, display=False, log_metrics=True, optimized=True)
+    sim = Simulator(env, update_delay=0.00001, display=False, log_metrics=True, optimized=False)
     
     ##############
     # Run the simulator
