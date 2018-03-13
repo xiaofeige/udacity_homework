@@ -13207,7 +13207,7 @@ mZlZlTjBMjMzMzMzqxInWGZmZmZmZlXy/wEqU+nxrGQjJgAAAABJRU5ErkJggg==
 <li>waypoint和deadline 和效率相关性最高，用来衡量与目的地之间的距离以及剩余时间。</li>
 <li><p>light,left,right, oncoming 都是和安全性相关的，交通灯控制能不能走，左右和oncoming说明来车情况，为避免撞车这个肯定很重要。</p>
 </li>
-<li><p>没有选用deadline做特征，这个特征可选值太多，会导致状态空间太大，deadline状态空间可选值从0%到100%，加上deadline状态空间至少增加100倍。特别是deadline值大小对动作选取没有泛化意义，小车的起点终点总在变，即使相同的路程，不同的路况也都不一样。尤其是小车在行驶中并不知道距离终点多远。</p>
+<li><p>没有选用deadline做特征，这个特征可选值太多，会导致状态空间太大，deadline的值是五倍于小车与终点的曼哈顿距离，加上deadline状态空间14倍。特别是deadline值大小对动作选取没有泛化意义，小车的起点终点总在变，即使相同的路程，不同的路况也都不一样，这会导致小车很难学到正确的行为。其次，加上deadline小车会尝试去选择最快的抵达方式，这样会直接导致安全性的降低，学习起来更加的困难。</p>
 </li>
 </ol>
 
@@ -13249,7 +13249,7 @@ mZlZlTjBMjMzMzMzqxInWGZmZmZmZlXy/wEqU+nxrGQjJgAAAABJRU5ErkJggg==
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <ul>
-<li>waypoint，light，left,right，oncoming 4个特征状态空间大小为 4x2x4x4x4 = 512。</li>
+<li>waypoint，light，left,right，oncoming 4个特征状态空间大小为 3x2x4x4x4 = 768。 waypoint可选值有三个是因为当waypoint是3的时候意味着小车已经到达了终点。</li>
 <li><p>能，通过这个5个特征的学习，机器能习得在各个情况下最优的动作方案。单次实验肯定是学不到合适的策略，前期的策略都是随机执行的，待执行一定数量的训练之后能根据评分知道哪些动作不可采取哪些可以采取。待小车的动作平均得分开始收敛的时候就学习得差不多了。</p>
 </li>
 <li><p>另外，当出现相同的最大action值时，要随机选择action。首先在程序刚初始化时候reward都是0，不随机选择的话学到的并不一定是最优方案。即使程序在跑了一段时间也是这个道理。</p>
@@ -17314,8 +17314,8 @@ YII=
 <ol>
 <li>选择了 ϵ=cos(t/500), t&gt;0。</li>
 <li>大概需要1500轮实验</li>
-<li>tolerance=0.001, alpha=0.1</li>
-<li>更优秀的探索因子衰减函数，后期随着习得的经验越来越多，越来越不需要冒险去探索，所以衰减的越来越快。</li>
+<li>tolerance=0.0, 当epsilon 足够小到这个时候就停止训练，因为到这个时候cos函数的导数趋近于无穷，衰减的最快。后面就又衰减的越来越慢。alpha=0.1是测试了几组数据之后发现这个值的评分最高，尽量的要保证有之前习得的经验，同事又要更新当前场景下的奖励，加权平均得到这个情况下执行这个动作的得分。</li>
+<li>更优秀的探索因子衰减函数，后期随着习得的经验越来越多，越来越不需要冒险去探索，所以衰减的越来越快。更多的训练迭代次数，能保证足够的学习机会。</li>
 <li>会。</li>
 <li>满意。</li>
 </ol>
@@ -17354,18 +17354,19 @@ YII=
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p>基本都正确，极少数会有点错误。小车的最终目的是及时安全到达指定目的地，表现在这里就是获取更高的得分。</p>
 <h4 id="case-one:">case one:<a class="anchor-link" href="#case-one:">&#194;&#182;</a></h4><p><code>('right', 'green', None, None, None)
  -- forward : 0.25
  -- right : 1.89
  -- None : -4.79
  -- left : 0.23</code></p>
-<p>要右转情况下，前方绿灯，且左右前三个方向均没有来车，选择直接右转没毛病。</p>
+<p>要右转情况下，前方绿灯，且左右前三个方向均没有来车，选择直接右转没毛病。而选择左转和前进不会出安全事故，但是会偏离航向所以得分很低但不会负分，但是不采取动作会导致交通堵塞，容易造成安全事故所以得分负分。最优策略确实是向右转。</p>
 <h4 id="case-two:">case two:<a class="anchor-link" href="#case-two:">&#194;&#182;</a></h4><p><code>('left', 'red', 'right', 'forward', 'left')
  -- forward : -39.69
  -- right : -19.86
  -- None : 0.00
  -- left : -35.24</code></p>
-<p>要左转情况下，遇到红灯，且左右前三方向均有车活动，选择不动没毛病。</p>
+<p>要左转情况下，遇到红灯，且左右前三方向均有车活动，选择不动没毛病。这个时候除了最优决策外的三个决策都是负分，很明显这个违规的惩罚很到位。</p>
 
 </div>
 </div>
